@@ -149,7 +149,7 @@ QSurfaceFormat QEglFSWindow::format() const
 
 void QEglFSWindow::requestUpdate()
 {
-    if (!m_hwc->requestUpdate(this))
+    if (!m_hwc->requestUpdate(window()))
         QPlatformWindow::requestUpdate();
 }
 

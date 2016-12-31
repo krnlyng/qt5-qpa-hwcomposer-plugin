@@ -49,12 +49,15 @@
 // libhybris access to the native hwcomposer window
 #include <hwcomposer_window.h>
 
-#include <QBasicTimer>
+#include "hwcinterface.h"
 
-class HwcProcs_v11;
 class QWindow;
 
-class HwComposerBackend_v11 : public QObject, public HwComposerBackend {
+class HWC11WindowSurface;
+class HWC11Thread;
+class HWC11FdReleaseQueue;
+
+class HwComposerBackend_v11 : public QObject, public HwComposerBackend, public HwcInterface::Compositor {
 public:
     HwComposerBackend_v11(hw_module_t *hwc_module, hw_device_t *hw_device, int num_displays);
     virtual ~HwComposerBackend_v11();
@@ -66,24 +69,58 @@ public:
     virtual void sleepDisplay(bool sleep);
     virtual float refreshRate();
 
-    virtual bool requestUpdate(QEglFSWindow *window) Q_DECL_OVERRIDE;
+    HwcInterface::Compositor *hwcInterface() Q_DECL_OVERRIDE { return this; }
+    void scheduleLayerList(HwcInterface::LayerList *list) Q_DECL_OVERRIDE;
+    const HwcInterface::LayerList *acceptedLayerList() const Q_DECL_OVERRIDE;
+    void swapLayerList(HwcInterface::LayerList *list) Q_DECL_OVERRIDE;
+    void setReleaseLayerListCallback(ReleaseLayerListCallback callback) { m_releaseLayerListCallback = callback; }
+    void setBufferAvailableCallback(BufferAvailableCallback callback, void *cbData) {
+        m_bufferAvailableCallback = callback;
+        m_bufferAvailableCallbackData = cbData;
+    }
+    void setInvalidateCallback(InvalidateCallback callback, void *data) {
+        m_invalidateCallback = callback;
+        m_invalidateCallbackData = data;
+    }
 
-    void timerEvent(QTimerEvent *) Q_DECL_OVERRIDE;
-    void handleVSyncEvent();
-    bool event(QEvent *e) Q_DECL_OVERRIDE;
+    void present(HWComposerNativeWindowBuffer *b);
+
+    bool requestUpdate(QWindow *window);
+    void onVSync();
+    uint32_t hwcVersion() { return hwc_version; }
+
+protected:
+    void timerEvent(QTimerEvent *te);
+    bool event(QEvent *e);
 
 private:
-    hwc_composer_device_1_t *hwc_device;
-    hwc_display_contents_1_t *hwc_list;
-    hwc_display_contents_1_t **hwc_mList;
-    uint32_t hwc_version;
-    int num_displays;
+    friend class HWC11FdReleaseQueue;
+    friend class HWC11Thread;
+    inline bool waitForComposer() const { return m_layerListBuffers.size() > 0 || m_eglSurfaceBuffer; }
+    void startVSyncCountdown();
+    void stopVSyncCountdown();
+    void deliverUpdateRequests();
 
-    bool m_displayOff;
-    QBasicTimer m_deliverUpdateTimeout;
-    QBasicTimer m_vsyncTimeout;
-    QSet<QWindow *> m_pendingUpdate;
-    HwcProcs_v11 *procs;
+    HWC11Thread *m_thread;
+    HwcInterface::LayerList *m_scheduledLayerList;
+
+    ReleaseLayerListCallback m_releaseLayerListCallback;
+    BufferAvailableCallback m_bufferAvailableCallback;
+    void *m_bufferAvailableCallbackData;
+    InvalidateCallback m_invalidateCallback;
+    void *m_invalidateCallbackData;
+
+    HWComposerNativeWindowBuffer *m_eglSurfaceBuffer;
+    bool m_eglWithLayerList;
+    QVarLengthArray<void *, 8> m_layerListBuffers;
+
+    QSet<QWindow *> m_windowsPendingUpdate;
+    int m_vsyncCountDown;
+    int m_timeToUpdateTimer;
+
+    QAtomicInt m_swappingLayersOnly;
+
+    uint32_t hwc_version;
 };
 
 #endif /* HWC_PLUGIN_HAVE_HWCOMPOSER1_API */

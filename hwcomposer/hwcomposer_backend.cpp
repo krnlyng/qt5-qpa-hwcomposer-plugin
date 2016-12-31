@@ -46,6 +46,7 @@
 #include "hwcomposer_backend_v10.h"
 #include "hwcomposer_backend_v11.h"
 
+Q_LOGGING_CATEGORY(QPA_LOG_HWC, "qt.qpa.hwc")
 
 HwComposerBackend::HwComposerBackend(hw_module_t *hwc_module)
     : hwc_module(hwc_module)
@@ -67,7 +68,7 @@ HwComposerBackend::create()
     // the hardware composer one. Therefor we rely on using the fbdev HYBRIS_EGLPLATFORM
     // here and use eglGetDisplay to initialize it.
     if (qEnvironmentVariableIsEmpty("QT_QPA_NO_FRAMEBUFFER_FIRST")) {
-	    eglGetDisplay(EGL_DEFAULT_DISPLAY);
+	    eglInitialize(eglGetDisplay(EGL_DEFAULT_DISPLAY), NULL, NULL);
     }
 
     // Open hardware composer

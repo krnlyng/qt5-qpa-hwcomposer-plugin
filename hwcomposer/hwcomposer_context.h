@@ -57,9 +57,12 @@
 QT_BEGIN_NAMESPACE
 
 class QEglFSContext;
-class QEglFSWindow;
 class HwComposerScreenInfo;
 class HwComposerBackend;
+
+namespace HwcInterface {
+    class Compositor;
+}
 
 class HwComposerContext
 {
@@ -82,7 +85,9 @@ public:
     void sleepDisplay(bool sleep);
     qreal refreshRate() const;
 
-    bool requestUpdate(QEglFSWindow *window);
+    HwcInterface::Compositor *hwcInterface() const;
+
+    bool requestUpdate(QWindow *window);
 
 private:
     HwComposerScreenInfo *info;

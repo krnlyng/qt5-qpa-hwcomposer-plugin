@@ -43,9 +43,7 @@
 #define HWCOMPOSER_BACKEND_H
 
 #include <sys/types.h>
-#include <sync/sync.h>
 
-#include <android-config.h>
 #include <hardware/hardware.h>
 #include <hardware/hwcomposer.h>
 
@@ -53,8 +51,17 @@
 #include <EGL/eglext.h>
 
 #include <qdebug.h>
+#include <qloggingcategory.h>
 
-class QEglFSWindow;
+#include <sync/sync.h>
+
+class QWindow;
+
+namespace HwcInterface {
+    class Compositor;
+}
+
+Q_DECLARE_LOGGING_CATEGORY(QPA_LOG_HWC)
 
 // Evaluate "x", if it doesn't return zero, print a warning
 #define HWC_PLUGIN_EXPECT_ZERO(x) \
@@ -109,7 +116,8 @@ public:
     virtual void sleepDisplay(bool sleep) = 0;
     virtual float refreshRate() = 0;
 
-    virtual bool requestUpdate(QEglFSWindow *) { return false; }
+    virtual HwcInterface::Compositor *hwcInterface() { return 0; }
+    virtual bool requestUpdate(QWindow *window) { return false; }
 
 protected:
     HwComposerBackend(hw_module_t *hwc_module);
