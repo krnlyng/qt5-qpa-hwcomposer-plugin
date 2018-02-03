@@ -150,8 +150,6 @@ public:
     // Mutex/wait condition to be used when updating the upcoming composition state
     QMutex mutex;
     QWaitCondition condition;
-
-    bool m_layerListChecked;
 };
 
 void hwc11_copy_layer_list(QVarLengthArray<void *, 8> *dst, HwcInterface::LayerList *src)
@@ -587,7 +585,6 @@ HWC11Thread::HWC11Thread(HwComposerBackend_v11 *b, hwc_composer_device_1_t *d)
     , acceptedLayerList(0)
     , eglSurfaceBuffer(0)
     , useLayerList(false)
-    , m_layerListChecked(false)
 {
     setObjectName("QPA/HWC Thread");
 }
@@ -822,13 +819,8 @@ void HWC11Thread::doComposition(hwc_display_contents_1_t *dc)
         hwc11_dump_display_contents(dc);
 
     {
-	if (dc != hwcLayerList || !m_layerListChecked) {
-            QSystraceEvent systrace("graphics", "QPA/HWC::prepare");
-            HWC_PLUGIN_EXPECT_ZERO(hwcDevice->prepare(hwcDevice, 1, &dc));
-	} else {
-            qCDebug(QPA_LOG_HWC, "                                (HWCT) skipping prepare after checkLayerList");
-	    m_layerListChecked = false;
-	}
+        QSystraceEvent systrace("graphics", "QPA/HWC::prepare");
+        HWC_PLUGIN_EXPECT_ZERO(hwcDevice->prepare(hwcDevice, 1, &dc));
     }
 
     if (QPA_LOG_HWC().isDebugEnabled()) {
@@ -978,8 +970,6 @@ void HWC11Thread::checkLayerList()
                         l.accepted ? "accepted" : "rejected");
             }
         }
-
-	m_layerListChecked = true;
 
     } else {
         qCDebug(QPA_LOG_HWC, "                                (HWCT)  - layer list was not accepted");
