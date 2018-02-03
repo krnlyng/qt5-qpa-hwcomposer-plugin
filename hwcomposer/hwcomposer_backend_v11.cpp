@@ -971,6 +971,9 @@ void HWC11Thread::checkLayerList()
             }
         }
 
+        // dang, why do we need to do this? also why do we not need to do this on tbj?
+        HWC_PLUGIN_EXPECT_ZERO(hwcDevice->set(hwcDevice, 1, &dc));
+
     } else {
         qCDebug(QPA_LOG_HWC, "                                (HWCT)  - layer list was not accepted");
         free(dc);
