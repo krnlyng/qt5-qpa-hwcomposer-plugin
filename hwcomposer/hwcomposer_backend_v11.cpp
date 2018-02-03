@@ -647,16 +647,17 @@ void HWC11Thread::initialize()
     hwcDevice->registerProcs(hwcDevice, static_cast<hwc_procs *>(this));
     hwcDevice->eventControl(hwcDevice, 0, HWC_EVENT_VSYNC, 0);
 
-    int hwcEglSurfaceListSize = sizeof(hwc_display_contents_1_t) + sizeof(hwc_layer_1_t);
+    int hwcEglSurfaceListSize = sizeof(hwc_display_contents_1_t) + 2 * sizeof(hwc_layer_1_t);
     hwcEglSurfaceList = (hwc_display_contents_1_t *) malloc(hwcEglSurfaceListSize);
     memset(hwcEglSurfaceList, 0, hwcEglSurfaceListSize);
     hwcEglSurfaceList->retireFenceFd = -1;
     hwcEglSurfaceList->outbuf = 0;
     hwcEglSurfaceList->outbufAcquireFenceFd = -1;
     hwcEglSurfaceList->flags = HWC_GEOMETRY_CHANGED;
-    hwcEglSurfaceList->numHwLayers = 1;
+    hwcEglSurfaceList->numHwLayers = 2;
+    hwcEglSurfaceList->hwLayers[0].flags = HWC_SKIP_LAYER;
     QRect fs(0, 0, size.width(), size.height());
-    hwc11_populate_layer(&hwcEglSurfaceList->hwLayers[0], fs, fs, 0, HWC_FRAMEBUFFER_TARGET);
+    hwc11_populate_layer(&hwcEglSurfaceList->hwLayers[1], fs, fs, 0, HWC_FRAMEBUFFER_TARGET);
 }
 
 void HWC11Thread::cleanup()
@@ -694,7 +695,7 @@ void HWC11Thread::composeEglSurface()
 
     // Grab the current egl surface buffer
     eglSurfaceBuffer = backend->m_eglSurfaceBuffer;
-    hwc11_update_layer(hwcEglSurfaceList->hwLayers, hwc11_getBufferFenceFd(eglSurfaceBuffer), eglSurfaceBuffer->handle);
+    hwc11_update_layer(&hwcEglSurfaceList->hwLayers[1], hwc11_getBufferFenceFd(eglSurfaceBuffer), eglSurfaceBuffer->handle);
     backend->m_eglSurfaceBuffer = 0;
 
     // HWC requires retireFenceFd to be unspecified on 'set'
@@ -703,9 +704,9 @@ void HWC11Thread::composeEglSurface()
 
     doComposition(hwcEglSurfaceList);
 
-    hwc11_setBufferFenceFd(eglSurfaceBuffer, hwcEglSurfaceList->hwLayers[0].releaseFenceFd);
+    hwc11_setBufferFenceFd(eglSurfaceBuffer, hwcEglSurfaceList->hwLayers[1].releaseFenceFd);
     qCDebug(QPA_LOG_HWC, "                                (HWCT)  - egl buffer=%p has release fd=%d (%d)",
-            eglSurfaceBuffer->handle, hwcEglSurfaceList->hwLayers[0].releaseFenceFd,
+            eglSurfaceBuffer->handle, hwcEglSurfaceList->hwLayers[1].releaseFenceFd,
             hwc11_getBufferFenceFd(eglSurfaceBuffer));
 
     // We need "some" fullscreen buffer to use in checkLayerList's prepare. It
