@@ -909,6 +909,7 @@ void HWC11Thread::checkLayerList()
             layerList->layerCount,
             layerList->eglRenderingEnabled ? " + EGL Surface" : "");
 
+    lock();
     while (!accept && layerCount > 0) {
 
         for (int i=0; i<layerCount; ++i) {
@@ -1000,6 +1001,7 @@ void HWC11Thread::checkLayerList()
         backend->m_releaseLayerListCallback(layerList);
         Q_ASSERT(acceptedLayerList == 0);
     }
+    unlock();
 }
 
 void HWC11Thread::syncAndCloseOldFences()
