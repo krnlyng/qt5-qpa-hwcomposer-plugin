@@ -536,17 +536,21 @@ static void hwc11_dump_display_contents(hwc_display_contents_1_t *dc)
             (int) dc->numHwLayers);
     for (unsigned int i=0; i<dc->numHwLayers; ++i) {
         const hwc_layer_1_t &l = dc->hwLayers[i];
-        qCDebug(QPA_LOG_HWC, "                                (HWCT)    - layer comp=%x, hints=%x, flags=%x, handle=%p, transform=%x, blending=%x, "
-                "src=(%d %d - %dx%d), dst=(%d %d - %dx%d), afd=%d, rfd=%d, a=%d, "
-                "region=(%d %d - %dx%d)",
-                l.compositionType, l.hints, l.flags, l.handle, l.transform, l.blending,
-                (int) l.sourceCropf.left, (int) l.sourceCropf.top, (int) l.sourceCropf.right, (int) l.sourceCropf.bottom,
-                l.displayFrame.left, l.displayFrame.top, l.displayFrame.right, l.displayFrame.bottom,
-                l.acquireFenceFd, l.releaseFenceFd, l.planeAlpha,
-                l.visibleRegionScreen.rects[0].left,
-                l.visibleRegionScreen.rects[0].top,
-                l.visibleRegionScreen.rects[0].right,
-                l.visibleRegionScreen.rects[0].bottom);
+        if(dc->hwLayers[i].flags == HWC_SKIP_LAYER) {
+            qCDebug(QPA_LOG_HWC, "HWC_SKIP_LAYER");
+        } else {
+            qCDebug(QPA_LOG_HWC, "                                (HWCT)    - layer comp=%x, hints=%x, flags=%x, handle=%p, transform=%x, blending=%x, "
+                    "src=(%d %d - %dx%d), dst=(%d %d - %dx%d), afd=%d, rfd=%d, a=%d, "
+                    "region=(%d %d - %dx%d)",
+                    l.compositionType, l.hints, l.flags, l.handle, l.transform, l.blending,
+                    (int) l.sourceCropf.left, (int) l.sourceCropf.top, (int) l.sourceCropf.right, (int) l.sourceCropf.bottom,
+                    l.displayFrame.left, l.displayFrame.top, l.displayFrame.right, l.displayFrame.bottom,
+                    l.acquireFenceFd, l.releaseFenceFd, l.planeAlpha,
+                    l.visibleRegionScreen.rects[0].left,
+                    l.visibleRegionScreen.rects[0].top,
+                    l.visibleRegionScreen.rects[0].right,
+                    l.visibleRegionScreen.rects[0].bottom);
+        }
     }
 }
 
@@ -655,6 +659,9 @@ void HWC11Thread::initialize()
     hwcEglSurfaceList->outbufAcquireFenceFd = -1;
     hwcEglSurfaceList->flags = HWC_GEOMETRY_CHANGED;
     hwcEglSurfaceList->numHwLayers = 2;
+    // trick ourselves into accepting the list, and trick hwc "see" two layers, but make it skip it
+    // qcom BSP needs at least 2 layers.
+    hwcEglSurfaceList->hwLayers[0].compositionType = HWC_OVERLAY;
     hwcEglSurfaceList->hwLayers[0].flags = HWC_SKIP_LAYER;
     QRect fs(0, 0, size.width(), size.height());
     hwc11_populate_layer(&hwcEglSurfaceList->hwLayers[1], fs, fs, 0, HWC_FRAMEBUFFER_TARGET);
