@@ -498,6 +498,7 @@ void HwComposerBackend_v11::swapLayerList(HwcInterface::LayerList *list)
         EGLSurface surface = eglGetCurrentSurface(EGL_DRAW);
         qCDebug(QPA_LOG_HWC, " - with eglSwapBuffers, display=%p, surface=%p", display, surface);
         eglSwapBuffers(display, surface);
+	qCDebug(QPA_LOG_HWC, "buffers swapped");
 
     } else {
         QSystraceEvent systrace("graphics", "QPA/HWC::swapLayerList(HWC)");
@@ -720,6 +721,19 @@ void HWC11Thread::composeEglSurface()
     // doesn't really matter where it comes from, so just use the last frame
     // we swapped.
     lastEglSurfaceBuffer = eglSurfaceBuffer->handle;
+
+    m_releaseFences.resize(hwcEglSurfaceList->numHwLayers);
+    for (int i=0; i<hwcEglSurfaceList->numHwLayers; ++i) {
+        const hwc_layer_1_t &l = hwcEglSurfaceList->hwLayers[i];
+        BufferAndFd entry = { l.handle, l.releaseFenceFd };
+        m_releaseFences[i] = entry;
+        if (l.releaseFenceFd == -1) {
+            qCDebug(QPA_LOG_HWC, "                                (HWCT)  - buffer %p does not have release fence, available right away", l.handle);
+            backend->m_bufferAvailableCallback((void *) entry.buffer, backend->m_bufferAvailableCallbackData);
+        } else {
+            qCDebug(QPA_LOG_HWC, "                                (HWCT)  - buffer %p (fd=%d) stored for later...", l.handle, l.releaseFenceFd);
+        }
+    }
 
     qCDebug(QPA_LOG_HWC, "                                (HWCT)  - composition done, waking up render thread");
     wake();
