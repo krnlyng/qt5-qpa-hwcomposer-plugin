@@ -187,7 +187,8 @@ void HWC2Window::present(HWComposerNativeWindowBuffer *buffer)
     QPA_HWC_TIMING_SAMPLE(prepareTime);
 
     QSystrace::begin("graphics", "QPA::set_client_target", "");
-    hwc2_compat_display_set_client_target(hwcDisplay, /* slot */0, buffer,
+    hwc2_compat_display_set_client_target(hwcDisplay, /* slot */0,
+                                          static_cast<struct ANativeWindowBuffer*>(buffer),
                                           acquireFenceFd,
                                           HAL_DATASPACE_UNKNOWN);
     QSystrace::end("graphics", "QPA::set_client_target", "");
