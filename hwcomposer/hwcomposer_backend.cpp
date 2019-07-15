@@ -170,8 +170,10 @@ HwComposerBackend::create()
             break;
 #endif /* HWC_PLUGIN_HAVE_HWCOMPOSER1_API */
 #ifdef HWC_PLUGIN_HAVE_HWCOMPOSER2_API
-        case HWC_DEVICE_API_VERSION_2_0:
-            return new HwComposerBackend_v20(hwc_module, libminisf);
+	case HWC_DEVICE_API_VERSION_2_0:
+            hwc_device->close(hwc_device);
+            android_dlclose(hwc_module->dso);
+            return new HwComposerBackend_v20(NULL, libminisf);
             break;
 #endif
         default:
