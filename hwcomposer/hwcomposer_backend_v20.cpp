@@ -175,7 +175,7 @@ void HWC2Window::present(HWComposerNativeWindowBuffer *buffer)
     if (numTypes || numRequests) {
         qDebug("prepare: validate required changes for display %d: %d",
                displayId, error);
-        return;
+        //return;
     }
 
     error = hwc2_compat_display_accept_changes(hwcDisplay);
