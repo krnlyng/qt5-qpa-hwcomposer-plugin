@@ -116,6 +116,7 @@ public:
 
 protected:
     HwComposerBackend(hw_module_t *hwc_module, void *libmsf);
+    HwComposerBackend(void *libmsf);
     virtual ~HwComposerBackend();
 
     hw_module_t *hwc_module;

@@ -61,6 +61,11 @@ HwComposerBackend::HwComposerBackend(hw_module_t *hwc_module, void *libmsf)
 {
 }
 
+HwComposerBackend::HwComposerBackend(void *libmsf)
+    : hwc_module(NULL), libminisf(libmsf)
+{
+}
+
 HwComposerBackend::~HwComposerBackend()
 {
     if (libminisf) {
@@ -94,16 +99,19 @@ HwComposerBackend::create()
     libminisf = android_dlopen("libminisf.so", RTLD_LAZY);
 
     if (libminisf) {
-	startMiniSurfaceFlinger = (void(*)(void))android_dlsym(libminisf, "startMiniSurfaceFlinger");
+        startMiniSurfaceFlinger = (void(*)(void))android_dlsym(libminisf, "startMiniSurfaceFlinger");
     }
 
     if (startMiniSurfaceFlinger) {
-	startMiniSurfaceFlinger();
+        startMiniSurfaceFlinger();
     } else {
-	fprintf(stderr, "libminisf is incompatible or missing. Can not possibly start the SurfaceFlinger service. If you're experiencing troubles with media try updating droidmedia (and/or this plugin).");
+        fprintf(stderr, "libminisf is incompatible or missing. Can not possibly start the SurfaceFlinger service. If you're experiencing troubles with media try updating droidmedia (and/or this plugin).");
     }
 
     // Open hardware composer
+#ifdef HWC_PLUGIN_HAVE_HWCOMPOSER2_API
+    return new HwComposerBackend_v20(libminisf);
+#else
     HWC_PLUGIN_ASSERT_ZERO(hw_get_module(HWC_HARDWARE_MODULE_ID, (const hw_module_t **)(&hwc_module)));
 
     fprintf(stderr, "== hwcomposer module ==\n");
@@ -169,11 +177,6 @@ HwComposerBackend::create()
             return new HwComposerBackend_v11(hwc_module, hwc_device, libminisf, HWC_NUM_DISPLAY_TYPES);
             break;
 #endif /* HWC_PLUGIN_HAVE_HWCOMPOSER1_API */
-#ifdef HWC_PLUGIN_HAVE_HWCOMPOSER2_API
-        case HWC_DEVICE_API_VERSION_2_0:
-            return new HwComposerBackend_v20(hwc_module, libminisf);
-            break;
-#endif
         default:
             fprintf(stderr, "Unknown hwcomposer API: 0x%x/0x%x/0x%x\n",
                     hwc_module->module_api_version,
@@ -182,6 +185,7 @@ HwComposerBackend::create()
             return NULL;
             break;
     }
+#endif
 }
 
 void

@@ -57,7 +57,7 @@ class QWindow;
 
 class HwComposerBackend_v20 : public QObject, public HwComposerBackend {
 public:
-    HwComposerBackend_v20(hw_module_t *hwc_module, void *libminisf);
+    HwComposerBackend_v20(void *libminisf);
     virtual ~HwComposerBackend_v20();
 
     virtual EGLNativeDisplayType display();

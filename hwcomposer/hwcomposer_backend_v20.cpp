@@ -211,8 +211,8 @@ void HWC2Window::present(HWComposerNativeWindowBuffer *buffer)
 
 int HwComposerBackend_v20::composerSequenceId = 0;
 
-HwComposerBackend_v20::HwComposerBackend_v20(hw_module_t *hwc_module, void *libminisf)
-    : HwComposerBackend(hwc_module, libminisf)
+HwComposerBackend_v20::HwComposerBackend_v20(void *libminisf)
+    : HwComposerBackend(libminisf)
     , hwc2_device(NULL)
     , hwc2_primary_display(NULL)
     , hwc2_primary_layer(NULL)
@@ -244,9 +244,11 @@ HwComposerBackend_v20::HwComposerBackend_v20(hw_module_t *hwc_module, void *libm
 
 HwComposerBackend_v20::~HwComposerBackend_v20()
 {
-    hwc2_compat_display_set_vsync_enabled(hwc2_primary_display, HWC2_VSYNC_DISABLE);
+    if (!m_displayOff) {
+        hwc2_compat_display_set_vsync_enabled(hwc2_primary_display, HWC2_VSYNC_DISABLE);
 
-    hwc2_compat_display_set_power_mode(hwc2_primary_display, HWC2_POWER_MODE_OFF);
+        hwc2_compat_display_set_power_mode(hwc2_primary_display, HWC2_POWER_MODE_OFF);
+    }
 
     // Close the hwcomposer handle
     if (!qgetenv("QPA_HWC_WORKAROUNDS").split(',').contains("no-close-hwc"))
